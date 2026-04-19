@@ -5,13 +5,18 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { auth } from 'express-oauth2-jwt-bearer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
 // Auth0 Middleware Configuration
 const checkJwt = auth({
-  audience: process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: process.env.AUTH0_ISSUER_URL,
+  audience: process.env.AUTH0_AUDIENCE as string,
+  issuerBaseURL: process.env.AUTH0_ISSUER_URL as string,
   tokenSigningAlg: 'RS256'
 });
 
@@ -736,6 +741,18 @@ app.post('/api/analyze-weekly', async (req, res) => {
   }
 });
 
+// Serve static files from the React app
+// In production container, frontend is at /app/frontend_dist
+const frontendPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, '../frontend_dist')
+  : path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+// Handle React routing, return all requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 // Global Error Handler
 app.use(async (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   // 1. Internal Logging (Production Ready)
@@ -757,7 +774,7 @@ app.use(async (err: any, req: express.Request, res: express.Response, next: expr
   }
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT} (All Interfaces)`);
 });

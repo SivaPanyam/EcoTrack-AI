@@ -1,0 +1,8 @@
+node_modules
+frontend/node_modules
+backend/node_modules
+.git
+.env
+frontend/.env
+backend/.env
+# Do NOT ignore dist folders now, as we will build locally
